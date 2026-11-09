@@ -14,14 +14,18 @@ type PullRequestController struct {
 	userService            *services.UserService
 	executionOutputService *services.ExecutionOutputService
 	storyService           *services.StoryService
+	projectService         *services.ProjectService
 }
 
 func NewPullRequestController(service *services.PullRequestService, userService *services.UserService,
-	executionOutputService *services.ExecutionOutputService, storyService *services.StoryService) *PullRequestController {
+	executionOutputService *services.ExecutionOutputService, storyService *services.StoryService,
+	projectService *services.ProjectService) *PullRequestController {
 	return &PullRequestController{
 		pullRequestService:     service,
 		userService:            userService,
 		executionOutputService: executionOutputService,
+		storyService:           storyService,
+		projectService:         projectService,
 	}
 }
 
@@ -117,6 +121,9 @@ func (ctrl *PullRequestController) CreateManualPullRequest(c *gin.Context) {
 		return
 	}
 	ProjectID := createPRRequest.ProjectID
+	if _, ok := authorizeProjectAccess(c, ctrl.projectService, ProjectID); !ok {
+		return
+	}
 	Title := createPRRequest.Title
 	Description := createPRRequest.Description
 	fmt.Println("project id _____", ProjectID)

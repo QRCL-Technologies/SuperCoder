@@ -16,12 +16,16 @@ import (
 type StoryController struct {
 	storyService     *services.StoryService
 	executionService *services.ExecutionService
+	projectService   *services.ProjectService
 }
 
 func (controller *StoryController) CreateStory(context *gin.Context) {
 	var createStoryRequest request.CreateStoryRequest
 	if err := context.ShouldBindJSON(&createStoryRequest); err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if _, ok := authorizeProjectAccess(context, controller.projectService, createStoryRequest.ProjectId); !ok {
 		return
 	}
 	storyID, err := controller.storyService.CreateStoryForProject(createStoryRequest)
@@ -33,9 +37,20 @@ func (controller *StoryController) CreateStory(context *gin.Context) {
 }
 
 func (controller *StoryController) CreateDesignStory(context *gin.Context) {
+	projectIdStr := context.PostForm("project_id")
+	storyType := constants.Frontend
+	projectId, err := strconv.Atoi(projectIdStr)
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "Invalid project_id"})
+		return
+	}
+	if _, ok := authorizeProjectAccess(context, controller.projectService, projectId); !ok {
+		return
+	}
 	file, err := context.FormFile("file")
 	if err != nil {
 		context.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 	if file == nil {
 		context.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "File not found"})
@@ -54,13 +69,6 @@ func (controller *StoryController) CreateDesignStory(context *gin.Context) {
 			return
 		}
 	}(uploadedFile)
-	projectIdStr := context.PostForm("project_id")
-	storyType := constants.Frontend
-	projectId, err := strconv.Atoi(projectIdStr)
-	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": "Invalid project_id"})
-		return
-	}
 	storyID, err := controller.storyService.CreateDesignStoryForProject(uploadedFile, file.Filename, title, projectId, storyType)
 	if err != nil {
 		context.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -148,7 +156,7 @@ func (controller *StoryController) UpdateStoryStatus(context *gin.Context) {
 
 func (controller *StoryController) EditStoryByID(context *gin.Context) {
 	storyIdStr := context.Param("story_id")
-	_, err := strconv.Atoi(storyIdStr)
+	storyID, err := strconv.Atoi(storyIdStr)
 	if err != nil {
 		context.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -158,6 +166,8 @@ func (controller *StoryController) EditStoryByID(context *gin.Context) {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	// The route's story_id is the one authorised by storyAuthMiddleware.
+	updateStoryRequest.StoryID = storyID
 
 	err = controller.storyService.UpdateStoryForProject(updateStoryRequest)
 	if err != nil {
@@ -173,6 +183,9 @@ func (controller *StoryController) EditDesignStoryById(context *gin.Context) {
 	storyID, err := strconv.Atoi(storyIdStr)
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": "Invalid story_id"})
+		return
+	}
+	if _, ok := authorizeStoryAccess(context, controller.storyService, controller.projectService, storyID); !ok {
 		return
 	}
 	title := context.PostForm("title")
@@ -256,6 +269,14 @@ func (controller *StoryController) RetrieveCodeForFile(context *gin.Context) {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	story, ok := authorizeStoryAccess(context, controller.storyService, controller.projectService, int(retrieveCodeRequest.StoryID))
+	if !ok {
+		return
+	}
+	if story.ProjectID != retrieveCodeRequest.ProjectID {
+		context.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+		return
+	}
 
 	code, err := controller.storyService.RetrieveCodeForFile(retrieveCodeRequest.ProjectID, retrieveCodeRequest.StoryID, retrieveCodeRequest.FileName)
 	if err != nil {
@@ -318,9 +339,10 @@ func (controller *StoryController) GetImageByStoryId(context *gin.Context) {
     context.DataFromReader(http.StatusOK, contentLength, *contentType, reader, nil)
 }
 
-func NewStoryController(storyService *services.StoryService, executionService *services.ExecutionService) *StoryController {
+func NewStoryController(storyService *services.StoryService, executionService *services.ExecutionService, projectService *services.ProjectService) *StoryController {
 	return &StoryController{
 		storyService:     storyService,
 		executionService: executionService,
+		projectService:   projectService,
 	}
 }
