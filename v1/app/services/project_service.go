@@ -12,6 +12,7 @@ import (
 	"ai-developer/app/types/response"
 	"ai-developer/app/utils"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -255,10 +256,15 @@ func (s *ProjectService) DeleteProjectWorkspace(projectID int) error {
 	return nil
 }
 
-func (s *ProjectService) UpdateProject(requestData request.UpdateProjectRequest) (*models.Project, error) {
+var ErrProjectForbidden = errors.New("forbidden")
+
+func (s *ProjectService) UpdateProject(organisationID uint, requestData request.UpdateProjectRequest) (*models.Project, error) {
 	project, err := s.projectRepo.GetProjectById(requestData.ProjectID)
 	if err != nil {
 		return nil, err
+	}
+	if project.OrganisationID != organisationID {
+		return nil, ErrProjectForbidden
 	}
 	updatedProject, err := s.projectRepo.UpdateProject(project, requestData)
 	if err != nil {
