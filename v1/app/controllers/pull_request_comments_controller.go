@@ -19,7 +19,7 @@ func NewPullRequestCommentController(pullRequestCommentService *services.PullReq
 }
 
 func (ctrl *PullRequestCommentsController) CreateCommentForPrID(c *gin.Context) {
-	pullRequestID, err := strconv.ParseUint(c.Param("pull_request_id"), 10, 64)
+	pullRequestID, err := strconv.ParseUint(c.Param("pull_request_id"), 10, 32)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid pull request ID"})
 		return
@@ -29,7 +29,7 @@ func (ctrl *PullRequestCommentsController) CreateCommentForPrID(c *gin.Context) 
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if createCommentRequest.PullRequestID != 0 && uint64(createCommentRequest.PullRequestID) != pullRequestID {
+	if createCommentRequest.PullRequestID != 0 && createCommentRequest.PullRequestID != uint(pullRequestID) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Pull request ID in body does not match path"})
 		return
 	}
