@@ -5,6 +5,7 @@ import (
 	"go.uber.org/zap"
 	"workspace-service/app/models/dto"
 	"workspace-service/app/services"
+	"workspace-service/app/utils"
 )
 
 type JobsController struct {
@@ -22,6 +23,17 @@ func (wc *JobsController) CreateWorkspace(c *gin.Context) {
 		c.AbortWithStatusJSON(400, gin.H{
 			"error": "Bad Request",
 		})
+		return
+	}
+
+	if err := utils.ValidateResourceId("projectId", body.ProjectId); err != nil {
+		wc.logger.Warn("Rejected invalid job request", zap.Error(err))
+		c.AbortWithStatusJSON(400, gin.H{"error": "Bad Request"})
+		return
+	}
+	if err := utils.ValidateExecutorImage(body.ExecutorImage); err != nil {
+		wc.logger.Warn("Rejected invalid job request", zap.Error(err))
+		c.AbortWithStatusJSON(400, gin.H{"error": "Bad Request"})
 		return
 	}
 

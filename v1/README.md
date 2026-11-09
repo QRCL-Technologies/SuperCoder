@@ -95,8 +95,11 @@ Before you proceed, ensure that you have the following installed on your system:
 To build and run the Go server, Asynq worker, and Postgres, execute the following command:
 
 ```bash
+export WORKSPACE_SERVICE_API_KEY=$(openssl rand -hex 32)
 docker-compose up --build
 ```
+
+`WORKSPACE_SERVICE_API_KEY` is the shared secret the server and worker use to authenticate to the internal workspace service; it is required.
 
 You can now access the UI at http://localhost:3000.
 

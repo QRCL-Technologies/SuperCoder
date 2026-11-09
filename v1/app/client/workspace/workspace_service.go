@@ -17,8 +17,18 @@ import (
 
 type WorkspaceServiceClient struct {
 	endpoint   string
+	apiKey     string
 	client     *http.Client
 	slackAlert *monitoring.SlackAlert
+}
+
+func (ws *WorkspaceServiceClient) newRequest(method string, url string, body io.Reader) (*http.Request, error) {
+	req, err := http.NewRequest(method, url, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+ws.apiKey)
+	return req, nil
 }
 
 func (ws *WorkspaceServiceClient) CreateWorkspace(createWorkspaceRequest *request.CreateWorkspaceRequest) (createWorkspaceResponse *response.CreateWorkspaceResponse, err error) {
@@ -27,7 +37,7 @@ func (ws *WorkspaceServiceClient) CreateWorkspace(createWorkspaceRequest *reques
 		log.Printf("failed to marshal create workspace request: %v", err)
 		return
 	}
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/api/v1/workspaces", ws.endpoint), bytes.NewBuffer(payload))
+	req, err := ws.newRequest("POST", fmt.Sprintf("%s/api/v1/workspaces", ws.endpoint), bytes.NewBuffer(payload))
 	if err != nil {
 		log.Printf("failed to create create workspace request: %v", err)
 		return
@@ -73,7 +83,7 @@ func (ws *WorkspaceServiceClient) CreateFrontendWorkspace(createWorkspaceRequest
 		log.Printf("failed to marshal create workspace request: %v", err)
 		return
 	}
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/api/v1/frontend/workspaces", ws.endpoint), bytes.NewBuffer(payload))
+	req, err := ws.newRequest("POST", fmt.Sprintf("%s/api/v1/frontend/workspaces", ws.endpoint), bytes.NewBuffer(payload))
 	if err != nil {
 		log.Printf("failed to create create workspace request: %v", err)
 		return
@@ -107,7 +117,7 @@ func (ws *WorkspaceServiceClient) CreateFrontendWorkspace(createWorkspaceRequest
 }
 
 func (ws *WorkspaceServiceClient) DeleteWorkspace(workspaceId string) (err error) {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/api/v1/workspaces/%s", ws.endpoint, workspaceId), nil)
+	req, err := ws.newRequest("DELETE", fmt.Sprintf("%s/api/v1/workspaces/%s", ws.endpoint, workspaceId), nil)
 	if err != nil {
 		return
 	}
@@ -135,7 +145,7 @@ func (ws *WorkspaceServiceClient) CreateJob(createJobRequest *request.CreateJobR
 		log.Printf("failed to marshal create job request: %v", err)
 		return
 	}
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/api/v1/jobs", ws.endpoint), bytes.NewBuffer(payload))
+	req, err := ws.newRequest("POST", fmt.Sprintf("%s/api/v1/jobs", ws.endpoint), bytes.NewBuffer(payload))
 	if err != nil {
 		log.Printf("failed to create create job request: %v", err)
 		return
@@ -184,6 +194,7 @@ func NewWorkspaceServiceClient(
 ) *WorkspaceServiceClient {
 	return &WorkspaceServiceClient{
 		endpoint:   config.GetEndpoint(),
+		apiKey:     config.GetAPIKey(),
 		client:     client,
 		slackAlert: slackAlert,
 	}

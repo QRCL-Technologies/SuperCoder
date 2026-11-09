@@ -10,6 +10,7 @@ import (
 	"workspace-service/app/clients"
 	"workspace-service/app/config"
 	"workspace-service/app/controllers"
+	"workspace-service/app/middleware"
 	"workspace-service/app/services"
 	"workspace-service/app/services/impl"
 )
@@ -156,6 +157,7 @@ func main() {
 		healthController *controllers.HealthController,
 		jobsController *controllers.JobsController,
 		nrApp *newrelic.Application,
+		wsConfig *config.WorkspaceServiceConfig,
 	) (err error) {
 		defer func() {
 			err := logger.Sync()
@@ -164,6 +166,11 @@ func main() {
 				return
 			}
 		}()
+
+		apiKey := wsConfig.APIKey()
+		if apiKey == "" {
+			logger.Fatal("WORKSPACES_API_KEY must be set")
+		}
 
 		r := gin.Default()
 		// Add New Relic middleware to the Gin router
@@ -174,11 +181,13 @@ func main() {
 			c.Next()
 		})
 		r.Handle("GET", "/api/health", healthController.Health)
-		r.Handle("POST", "/api/v1/workspaces", wsController.CreateWorkspace)
-		r.Handle("POST", "/api/v1/frontend/workspaces", wsController.CreateFrontendWorkspace)
-		r.Handle("DELETE", "/api/v1/workspaces/:workspaceId", wsController.DeleteWorkspace)
 
-		r.Handle("POST", "/api/v1/jobs", jobsController.CreateWorkspace)
+		v1 := r.Group("/api/v1", middleware.APIKeyAuth(apiKey))
+		v1.Handle("POST", "/workspaces", wsController.CreateWorkspace)
+		v1.Handle("POST", "/frontend/workspaces", wsController.CreateFrontendWorkspace)
+		v1.Handle("DELETE", "/workspaces/:workspaceId", wsController.DeleteWorkspace)
+
+		v1.Handle("POST", "/jobs", jobsController.CreateWorkspace)
 		return r.Run()
 	})
 
