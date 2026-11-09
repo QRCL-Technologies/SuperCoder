@@ -15,6 +15,14 @@ func (c *WorkspaceServiceConfig) GitnessAuthToken() string {
 	return c.config.String("gitness.token")
 }
 
+func (c *WorkspaceServiceConfig) GitnessHost() string {
+	return c.config.String("gitness.host")
+}
+
+func (c *WorkspaceServiceConfig) APIKey() string {
+	return c.config.String("api.key")
+}
+
 func (c *WorkspaceServiceConfig) WorkspaceHostName() string {
 	return c.config.String("host")
 }

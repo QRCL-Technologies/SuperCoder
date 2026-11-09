@@ -17,6 +17,9 @@ func LoadConfig() (config *koanf.Koanf, err error) {
 		"namespace":   "workspaces",
 		"values.file": "values.yaml",
 		"project":     "workspace",
+		"gitness": map[string]interface{}{
+			"host": "gitness:3000",
+		},
 		"jobs": map[string]interface{}{
 			"images": map[string]interface{}{},
 			"docker": map[string]interface{}{
