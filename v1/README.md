@@ -98,6 +98,8 @@ To build and run the Go server, Asynq worker, and Postgres, execute the followin
 docker-compose up --build
 ```
 
+The server refuses to start unless `AI_DEVELOPER_JWT_SECRET_KEY` is set to a value of at least 32 bytes. When it is unset, `startup.sh` generates a random key and persists it in the `secrets` volume. To provide your own, e.g. `export AI_DEVELOPER_JWT_SECRET_KEY=$(openssl rand -base64 48)`.
+
 You can now access the UI at http://localhost:3000.
 
 ### 📚 Resources
