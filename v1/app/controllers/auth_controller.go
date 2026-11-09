@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+	"net"
 	"net/http"
 )
 
@@ -22,7 +23,7 @@ type AuthController struct {
 }
 
 func (controller *AuthController) GithubSignIn(c *gin.Context) {
-	if controller.envConfig.IsDevelopment() {
+	if controller.envConfig.DefaultUserLoginEnabled() && isLocalPeer(c) {
 		controller.HandleDefaultUser(c)
 		return
 	}
@@ -57,6 +58,12 @@ func (controller *AuthController) HandleDefaultUser(c *gin.Context) {
 	}
 
 	c.Redirect(http.StatusFound, controller.githubOAuthConfig.FrontendURL())
+}
+
+// isLocalPeer checks the direct TCP peer (ignoring forwarded headers) is a loopback or private address.
+func isLocalPeer(c *gin.Context) bool {
+	ip := net.ParseIP(c.RemoteIP())
+	return ip != nil && (ip.IsLoopback() || ip.IsPrivate())
 }
 
 func (controller *AuthController) SignIn(c *gin.Context) {

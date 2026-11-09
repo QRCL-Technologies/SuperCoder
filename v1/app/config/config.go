@@ -15,7 +15,8 @@ func LoadConfig() (*koanf.Koanf, error) {
 	// Load default configurations
 	err := config.Load(confmap.Provider(map[string]interface{}{
 		"domain":                     "developer.superagi.com",
-		"app.env":                    "development",
+		"app.env":                    "production",
+		"auth.default.user.enabled":  false,
 		"db.host":                    "localhost",
 		"db.user":                    "postgres",
 		"db.password":                "postgres",

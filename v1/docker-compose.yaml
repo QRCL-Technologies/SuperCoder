@@ -9,6 +9,8 @@ services:
       dockerfile: Dockerfile
       target: server-development
     environment:
+      AI_DEVELOPER_APP_ENV: ${AI_DEVELOPER_APP_ENV:-development}
+      AI_DEVELOPER_AUTH_DEFAULT_USER_ENABLED: ${AI_DEVELOPER_AUTH_DEFAULT_USER_ENABLED:-false}
       AI_DEVELOPER_DB_HOST: pg
       AI_DEVELOPER_DB_USER: postgres
       AI_DEVELOPER_DB_PASSWORD: postgres
@@ -52,6 +54,7 @@ services:
       dockerfile: Dockerfile
       target: worker-development
     environment:
+      AI_DEVELOPER_APP_ENV: ${AI_DEVELOPER_APP_ENV:-development}
       AI_DEVELOPER_DB_HOST: pg
       AI_DEVELOPER_DB_USER: postgres
       AI_DEVELOPER_DB_PASSWORD: postgres
