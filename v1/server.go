@@ -542,7 +542,7 @@ func main() {
 
 		designStory.POST("", storiesController.CreateDesignStory)
 		designStory.PUT("/edit", storiesController.EditDesignStoryById)
-		designStory.PUT("/review_viewed/:story_id", storiesController.UpdateStoryIsReviewed)
+		designStory.PUT("/review_viewed/:story_id", storyAuthMiddleware.Authorize(), storiesController.UpdateStoryIsReviewed)
 
 		story := stories.Group("/:story_id", storyAuthMiddleware.Authorize())
 
