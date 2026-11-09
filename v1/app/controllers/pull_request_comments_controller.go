@@ -5,6 +5,7 @@ import (
 	"ai-developer/app/types/request"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strconv"
 )
 
 type PullRequestCommentsController struct {
@@ -18,12 +19,21 @@ func NewPullRequestCommentController(pullRequestCommentService *services.PullReq
 }
 
 func (ctrl *PullRequestCommentsController) CreateCommentForPrID(c *gin.Context) {
+	pullRequestID, err := strconv.ParseUint(c.Param("pull_request_id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid pull request ID"})
+		return
+	}
 	var createCommentRequest request.CreateCommentRequest
 	if err := c.ShouldBindJSON(&createCommentRequest); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	err := ctrl.pullRequestCommentService.CreateComment(createCommentRequest.PullRequestID, createCommentRequest.Comment)
+	if createCommentRequest.PullRequestID != 0 && uint64(createCommentRequest.PullRequestID) != pullRequestID {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Pull request ID in body does not match path"})
+		return
+	}
+	err = ctrl.pullRequestCommentService.CreateComment(uint(pullRequestID), createCommentRequest.Comment)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
