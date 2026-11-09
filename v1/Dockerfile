@@ -10,6 +10,8 @@ RUN echo 'coder ALL=NOPASSWD: ALL' >> /etc/sudoers
 RUN mkdir -p /filestore
 RUN chown -R coder:coder /filestore 
 
+RUN mkdir -p /secrets && chown coder:coder /secrets && chmod 700 /secrets
+
 USER coder
 WORKDIR /home/coder
 

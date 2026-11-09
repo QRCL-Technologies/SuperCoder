@@ -46,6 +46,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	if err = config.ValidateJWTSecret(appConfig.String("jwt.secret.key")); err != nil {
+		config.Logger.Fatal("Invalid JWT configuration", zap.Error(err))
+	}
 	_ = c.Provide(func() *newrelic.Application {
 		fmt.Println("Creating New Relic Application....")
 		nrApp, _ := newrelic.NewApplication(

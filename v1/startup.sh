@@ -50,5 +50,20 @@ else
   echo "AI_DEVELOPER_GITNESS_TOKEN is set"
 fi
 
+# Generate and persist a random JWT signing key if none was provided
+if [ -z "$AI_DEVELOPER_JWT_SECRET_KEY" ]; then
+  jwt_secret_file="${JWT_SECRET_FILE:-/secrets/jwt_secret_key}"
+  if [ ! -s "$jwt_secret_file" ]; then
+    mkdir -p "$(dirname "$jwt_secret_file")"
+    (umask 077 && head -c 48 /dev/urandom | base64 | tr -d '[:space:]' > "$jwt_secret_file") || {
+      echo "Failed to generate JWT secret key"
+      exit 1
+    }
+    echo "Generated new JWT secret key at $jwt_secret_file"
+  fi
+  AI_DEVELOPER_JWT_SECRET_KEY=$(cat "$jwt_secret_file")
+  export AI_DEVELOPER_JWT_SECRET_KEY
+fi
+
 # Run the Go server
 go run server.go

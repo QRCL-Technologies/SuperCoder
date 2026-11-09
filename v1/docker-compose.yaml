@@ -31,9 +31,11 @@ services:
       AI_DEVELOPER_WORKSPACE_STATIC_FRONTEND_URL: "http://localhost:8083"
       AI_DEVELOPER_FILESTORE_TYPE: ${AI_DEVELOPER_FILESTORE_TYPE:-local}
       AI_DEVELOPER_FILESTORE_S3_BUCKET: ${AI_DEVELOPER_FILESTORE_S3_BUCKET}
+      AI_DEVELOPER_JWT_SECRET_KEY: ${AI_DEVELOPER_JWT_SECRET_KEY:-}
     volumes:
       - workspaces:/workspaces
       - filestore:/filestore
+      - secrets:/secrets
       - './startup.sh:/startup.sh'
     depends_on:
       - pg
@@ -225,3 +227,4 @@ volumes:
   workspaces:
   gitness:
   filestore:
+  secrets:

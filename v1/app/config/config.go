@@ -26,7 +26,6 @@ func LoadConfig() (*koanf.Koanf, error) {
 		"redis.db":                   0,
 		"github.redirect.url":        "http://localhost:8080/api/github/callback",
 		"github.frontend.url":        "http://localhost:3000",
-		"jwt.secret.key":             "asdlajksdjaskdajskdlasd",
 		"jwt.expiry.hours":           "200h",
 		"workspace.service.endpoint": "http://ws:8080",
 		"workspace": map[string]interface{}{
