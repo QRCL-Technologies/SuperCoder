@@ -536,7 +536,6 @@ func main() {
 
 		stories.POST("", storiesController.CreateStory)
 		stories.POST("/", storiesController.CreateStory)
-		stories.POST("/retrieve-code", storiesController.RetrieveCodeForFile)
 
 		designStory := stories.Group("/design", authMiddleware.MiddlewareFunc())
 
@@ -555,6 +554,7 @@ func main() {
 		story.DELETE("/", storiesController.DeleteStoryById)
 
 		story.GET("/code", storiesController.GetCodeForDesignStory)
+		story.POST("/retrieve-code", storiesController.RetrieveCodeForFile)
 		story.GET("/design", storiesController.GetDesignStoryByID)
 		story.GET("/fetch-image", storiesController.GetImageByStoryId)
 

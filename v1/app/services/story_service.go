@@ -472,29 +472,59 @@ func (s *StoryService) GetCodeForDesignStory(storyId int) ([]*response.GetCodeFo
 	return fileData, nil
 }
 
-func (s *StoryService) RetrieveCodeForFile (projectID uint, storyID uint, fileName string) ([]byte, error){
-	story, err := s.storyRepo.GetStoryById(int(storyID))
+var ErrInvalidFileName = errors.New("invalid file name")
+
+func (s *StoryService) RetrieveCodeForFile(storyID int, fileName string) ([]byte, error) {
+	if fileName == "" || filepath.IsAbs(fileName) || strings.HasPrefix(fileName, "/") ||
+		strings.Contains(fileName, "..") || strings.Contains(fileName, "\\") ||
+		filepath.Clean(fileName) != fileName {
+		return nil, ErrInvalidFileName
+	}
+	story, err := s.storyRepo.GetStoryById(storyID)
 	if err != nil {
 		s.logger.Error("Error fetching story", zap.Error(err))
 		return nil, err
 	}
-	project, err := s.projectService.GetProjectById(projectID)
+	project, err := s.projectService.GetProjectById(story.ProjectID)
 	if err != nil {
 		s.logger.Error("Error fetching project", zap.Error(err))
 		return nil, err
 	}
-	filePath := ""
-	if fileName == "package.json" {
-		filePath = config.FrontendWorkspacePath(project.HashID, story.HashID) + fileName
-	} else {
-		filePath = config.FrontendWorkspacePath(project.HashID, story.HashID) + "/app/" + fileName
+	baseDir := config.FrontendWorkspacePath(project.HashID, story.HashID)
+	if fileName != "package.json" {
+		baseDir = filepath.Join(baseDir, "app")
 	}
-	content, err := os.ReadFile(filePath)
-        if err != nil {
+	filePath := filepath.Join(baseDir, fileName)
+	if !isWithinDir(baseDir, filePath) {
+		return nil, ErrInvalidFileName
+	}
+	resolvedBase, err := filepath.EvalSymlinks(baseDir)
+	if err != nil {
+		s.logger.Error("Error resolving workspace path", zap.Error(err))
+		return nil, err
+	}
+	resolvedPath, err := filepath.EvalSymlinks(filePath)
+	if err != nil {
+		s.logger.Error("Error resolving file path", zap.Error(err))
+		return nil, err
+	}
+	if !isWithinDir(resolvedBase, resolvedPath) {
+		return nil, ErrInvalidFileName
+	}
+	content, err := os.ReadFile(resolvedPath)
+	if err != nil {
 		s.logger.Error("Error reading file", zap.Error(err))
-                return nil, err
-        }
+		return nil, err
+	}
 	return content, nil
+}
+
+func isWithinDir(baseDir string, target string) bool {
+	rel, err := filepath.Rel(baseDir, target)
+	if err != nil {
+		return false
+	}
+	return rel != "." && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) && !filepath.IsAbs(rel)
 }
 
 func (s *StoryService) GetDesignStoryDetails(storyId int) (*response.GetDesignStoriesOfProjectId, error) {
