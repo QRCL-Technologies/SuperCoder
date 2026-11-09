@@ -251,16 +251,25 @@ func (controller *StoryController) GetCodeForDesignStory(context *gin.Context) {
 }
 
 func (controller *StoryController) RetrieveCodeForFile(context *gin.Context) {
+	storyID, err := strconv.Atoi(context.Param("story_id"))
+	if err != nil {
+		context.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid story ID"})
+		return
+	}
 	var retrieveCodeRequest request.RetrieveCodeRequest
 	if err := context.ShouldBindJSON(&retrieveCodeRequest); err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	code, err := controller.storyService.RetrieveCodeForFile(retrieveCodeRequest.ProjectID, retrieveCodeRequest.StoryID, retrieveCodeRequest.FileName)
+	code, err := controller.storyService.RetrieveCodeForFile(storyID, retrieveCodeRequest.FileName)
 	if err != nil {
-		context.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-        	return 
+		if errors.Is(err, services.ErrInvalidFileName) {
+			context.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		context.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve code"})
+		return
 	}
 	context.JSON(http.StatusOK, gin.H{"code": string(code)})
 }
