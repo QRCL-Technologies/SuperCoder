@@ -3,6 +3,7 @@ package controllers
 import (
 	"ai-developer/app/services"
 	"ai-developer/app/types/request"
+	"errors"
 	"net/http"
 	"os"
 	"strconv"
@@ -88,7 +89,21 @@ func (controller *ProjectController) UpdateProject(context *gin.Context) {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	updatedProject, err := controller.projectService.UpdateProject(updateProjectRequest)
+	email, _ := context.Get("email")
+	user, err := controller.userService.GetUserByEmail(email.(string))
+	if err != nil {
+		context.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if user == nil {
+		context.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	updatedProject, err := controller.projectService.UpdateProject(user.OrganisationID, updateProjectRequest)
+	if errors.Is(err, services.ErrProjectForbidden) {
+		context.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+		return
+	}
 	if err != nil {
 		context.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
