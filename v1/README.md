@@ -92,11 +92,20 @@ Before you proceed, ensure that you have the following installed on your system:
 
 ### Build and Run the Go Server, Asynq worker, and Postgres
 
+Create a `.env` file with strong passwords for Postgres and the Gitness admin user (compose refuses to start without them):
+
+```bash
+cp .env.example .env
+# edit .env and set POSTGRES_PASSWORD and GITNESS_PRINCIPAL_ADMIN_PASSWORD
+```
+
 To build and run the Go server, Asynq worker, and Postgres, execute the following command:
 
 ```bash
 docker-compose up --build
 ```
+
+Postgres (5432) and Gitness (8085) are published on `127.0.0.1` only.
 
 You can now access the UI at http://localhost:3000.
 
